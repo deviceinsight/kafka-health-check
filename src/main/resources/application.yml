@@ -1,0 +1,28 @@
+spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  server:
+    port: 9090
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+          - loggers
+          - httptrace
+          - configprops
+          - metrics
+          - heapdump
+          - threaddump
+  endpoint:
+    health:
+      show-details: always

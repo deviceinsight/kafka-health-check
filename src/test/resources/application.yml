@@ -1,0 +1,5 @@
+logging:
+  level:
+    com.deviceinsight.kafkahealthcheck.kafkahealthcheck: DEBUG
+    org.springframework: DEBUG
+
