@@ -1,3 +1,111 @@
-= KafkaHealthCheck
+= Kafka Health Check
 
-Spring kafka health check.
+This library provides a kafka health check for spring boot actuator.
+
+== Usage
+
+Add the following dependency to your `pom.xml`
+
+[source,xml]
+....
+<dependency>
+    <groupId>com.deviceinsight.kafka</groupId>
+    <artifactId>kafka-health-check</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
+....
+
+In the same maven module you can configure the topic, poll timeouts, subscription timeouts and the receive timeouts
+in the `application.yml`
+
+An example for an `application.yaml` is:
+
+[source,yaml]
+....
+kafka:
+  health:
+    topic: health-checks
+    sendReceiveTimeoutMs: 2500
+    pollTimeoutMs: 200
+    subscriptionTimeoutMs: 5000
+....
+
+The values shown are the defaults.
+
+IMPORTANT: Make sure the configured health check topic exists!
+
+[source,java]
+....
+@Bean
+@ConfigurationProperties("kafka.health")
+public KafkaHealthProperties kafkaHealthProperties() {
+    return new KafkaHealthProperties();
+}
+....
+
+[source,java]
+....
+@Bean
+public KafkaConsumingHealthIndicator kafkaConsumingHealthIndicator(KafkaHealthProperties kafkaProperties,
+        KafkaProperties processingProperties) {
+    return new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
+            kafkaProperties.buildProducerProperties());
+}
+....
+
+Now if you call the actuator endpoint `actuator/health` you should see the following output:
+
+[source,json]
+....
+{
+   "status" : "UP",
+   "details" : {
+      "kafkaConsuming" : {
+         "status" : "UP"
+      }
+   }
+}
+....
+
+== Configuration
+
+|===
+|Property |Default |Description
+
+|kafka.health.topic |`health-checks` | Topic to subscribe to
+|kafka.health.sendReceiveTimeoutMs |2500 | The maximum time, in milliseconds, to wait for sending and receiving the message
+|kafka.health.pollTimeoutMs |200 | The time, in milliseconds, spent fetching the data from the topic
+|kafka.health.subscriptionTimeoutMs |5000 | The maximum time, in milliseconds, to wait for subscribing to topic
+
+|===
+
+== Releasing
+
+Creating a new release involves the following steps:
+
+. `./mvnw -DenableSshAgent=true jgitflow:release-start jgitflow:release-finish` +
+[NOTE]
+The `-DenableSshAgent=true` is only necessary, if you cloned the repository via SSH.
+. `git push origin master`
+. `git push --tags`
+. `git push origin develop`
+
+In order to deploy the release to Maven Central, you need to create an account at https://issues.sonatype.org and
+configure your account in `~/.m2/settings.xml`:
+
+[source,xml]
+....
+<settings>
+  <servers>
+    <server>
+      <id>ossrh</id>
+      <username>your-jira-id</username>
+      <password>your-jira-pwd</password>
+    </server>
+  </servers>
+</settings>
+....
+
+The account also needs access to the project on Maven Central. This can be requested by another project member.
+
+Then check out the release you want to deploy (`git checkout x.y.z`) and run `./mvnw deploy -Prelease`.

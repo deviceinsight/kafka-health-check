@@ -6,8 +6,8 @@ final class KafkaCommunicationResult {
 
 	private final Exception exception;
 
-	private KafkaCommunicationResult() {
-		this.topic = null;
+	private KafkaCommunicationResult(String topic) {
+		this.topic = topic;
 		this.exception = null;
 	}
 
@@ -17,7 +17,7 @@ final class KafkaCommunicationResult {
 	}
 
 	static KafkaCommunicationResult success(String topic) {
-		return new KafkaCommunicationResult();
+		return new KafkaCommunicationResult(topic);
 	}
 
 	static KafkaCommunicationResult failure(String topic, Exception exception) {
