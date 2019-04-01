@@ -23,10 +23,12 @@
 		<docker-maven-plugin.version>0.27.2</docker-maven-plugin.version>
 		<jgitflow-maven-plugin.version>1.0-m5.1</jgitflow-maven-plugin.version>
 		<spring-boot-starter.version>2.1.1.RELEASE</spring-boot-starter.version>
-		<spring.kafka.version>2.1.7.RELEASE</spring.kafka.version>
+		<spring.kafka.version>2.2.4.RELEASE</spring.kafka.version>
 
 		<maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
 		<maven-failsafe-plugin.version>2.22.1</maven-failsafe-plugin.version>
+		<assertj-core.version>3.11.1</assertj-core.version>
+		<guava.version>27.1-jre</guava.version>
 	</properties>
 
 	<dependencies>
@@ -41,6 +43,11 @@
 			<artifactId>spring-kafka</artifactId>
 			<version>${spring.kafka.version}</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>${guava.version}</version>
 		</dependency>
 
 		<dependency>
@@ -59,6 +66,24 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
 			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>${assertj-core.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-test</artifactId>
+			<version>2.1.2.RELEASE</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<version>${spring.kafka.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

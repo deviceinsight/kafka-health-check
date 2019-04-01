@@ -2,6 +2,7 @@ package com.deviceinsight.kafka.health;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -19,6 +20,7 @@ import org.springframework.boot.actuate.health.Health;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,7 +102,8 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 		}
 	}
 
-	private void subscribeToTopic() throws InterruptedException {
+	@VisibleForTesting
+	void subscribeToTopic() throws InterruptedException {
 
 		final CountDownLatch subscribed = new CountDownLatch(1);
 
@@ -123,7 +126,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 			}
 		});
 
-		consumer.poll(pollTimeoutMs);
+		consumer.poll(Duration.ofMillis(pollTimeoutMs));
 		if (!subscribed.await(subscriptionTimeoutMs, MILLISECONDS)) {
 			throw new RuntimeException("Subscription to kafka failed, topic=" + topic);
 		}
@@ -173,7 +176,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private boolean messageNotReceived(String message) {
 
-		return StreamSupport.stream(consumer.poll(pollTimeoutMs).spliterator(), false)
+		return StreamSupport.stream(consumer.poll(Duration.ofMillis(pollTimeoutMs)).spliterator(), false)
 				.noneMatch(msg -> msg.key().equals(message) && msg.value().equals(message));
 	}
 
