@@ -6,10 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import kafka.server.KafkaServer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
@@ -29,7 +26,6 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 @EmbeddedKafka(topics = {TOPIC})
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KafkaConsumingHealthIndicatorTest {
 
 	static final String TOPIC = "health-checks";
@@ -39,7 +35,7 @@ public class KafkaConsumingHealthIndicatorTest {
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafkaBroker;
 
-	@BeforeAll
+	@BeforeEach
 	public void setUp() {
 		Map<String, Object> consumerConfigs =
 				new HashMap<>(KafkaTestUtils.consumerProps("consumer", "false", embeddedKafkaBroker));
@@ -49,7 +45,7 @@ public class KafkaConsumingHealthIndicatorTest {
 		consumer.poll(Duration.ofSeconds(1));
 	}
 
-	@AfterAll
+	@AfterEach
 	public void tearDown() {
 		consumer.close();
 		embeddedKafkaBroker.getKafkaServers().forEach(KafkaServer::shutdown);
@@ -58,14 +54,14 @@ public class KafkaConsumingHealthIndicatorTest {
 
 	@Test
 	public void kafkaIsDown() throws Exception {
-		KafkaHealthProperties kafkaHealthProperties = new KafkaHealthProperties();
+		final KafkaHealthProperties kafkaHealthProperties = new KafkaHealthProperties();
 		kafkaHealthProperties.setTopic(TOPIC);
 
 		final KafkaProperties kafkaProperties = new KafkaProperties();
-		BrokerAddress[] brokerAddresses = embeddedKafkaBroker.getBrokerAddresses();
+		final BrokerAddress[] brokerAddresses = embeddedKafkaBroker.getBrokerAddresses();
 		kafkaProperties.setBootstrapServers(Collections.singletonList(brokerAddresses[0].toString()));
 
-		KafkaConsumingHealthIndicator healthIndicator =
+		final KafkaConsumingHealthIndicator healthIndicator =
 				new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
 						kafkaProperties.buildProducerProperties());
 		healthIndicator.subscribeToTopic();
@@ -74,6 +70,9 @@ public class KafkaConsumingHealthIndicatorTest {
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 
 		shutdownKafka();
+
+		health = healthIndicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 	}
 
 	private void shutdownKafka() {
