@@ -1,5 +1,10 @@
 = Kafka Health Check
 
+:uri-build-status: https://travis-ci.org/deviceinsight/kafka-health-check
+:img-build-status: https://api.travis-ci.org/deviceinsight/kafka-health-check.svg?branch=master
+
+image:{img-build-status}[Build Status Badge,link={uri-build-status}]
+
 This library provides a kafka health check for spring boot actuator.
 
 == Usage
