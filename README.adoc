@@ -88,9 +88,7 @@ Now if you call the actuator endpoint `actuator/health` you should see the follo
 
 Creating a new release involves the following steps:
 
-. `./mvnw -DenableSshAgent=true jgitflow:release-start jgitflow:release-finish` +
-[NOTE]
-The `-DenableSshAgent=true` is only necessary, if you cloned the repository via SSH.
+. `./mvnw gitflow:release-start gitflow:release-finish`
 . `git push origin master`
 . `git push --tags`
 . `git push origin develop`
