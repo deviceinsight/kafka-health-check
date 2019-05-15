@@ -95,8 +95,10 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private void setConsumerGroup(Map<String, Object> kafkaConsumerProperties) {
 		try {
-			kafkaConsumerProperties.putIfAbsent(ConsumerConfig.GROUP_ID_CONFIG,
-					"health-check-" + InetAddress.getLocalHost().getHostAddress());
+			String groupId = (String) kafkaConsumerProperties.getOrDefault(ConsumerConfig.GROUP_ID_CONFIG,
+					UUID.randomUUID().toString());
+			kafkaConsumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG,
+					groupId + "-health-check-" + InetAddress.getLocalHost().getHostAddress());
 		} catch (UnknownHostException e) {
 			throw new IllegalStateException(e);
 		}

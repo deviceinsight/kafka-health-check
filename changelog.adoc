@@ -1,6 +1,10 @@
 = KafkaHealthCheck
 :icons: font
 
+== Version 1.1.0
+
+* Always set the kafka consumer group of this health check
+
 == Version 0.1.0
 
 * Develop kafka health check
