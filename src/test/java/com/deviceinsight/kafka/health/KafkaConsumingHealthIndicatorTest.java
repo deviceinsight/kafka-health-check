@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import kafka.server.KafkaServer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,15 +65,14 @@ public class KafkaConsumingHealthIndicatorTest {
 		final KafkaConsumingHealthIndicator healthIndicator =
 				new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
 						kafkaProperties.buildProducerProperties());
-		healthIndicator.subscribeToTopic();
+		healthIndicator.subscribeAndSendMessage();
 
 		Health health = healthIndicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 
 		shutdownKafka();
 
-		health = healthIndicator.health();
-		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		Awaitility.await().untilAsserted(() -> assertThat(healthIndicator.health().getStatus()).isEqualTo(Status.DOWN));
 	}
 
 	private void shutdownKafka() {
