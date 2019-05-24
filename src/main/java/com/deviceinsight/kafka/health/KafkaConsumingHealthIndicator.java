@@ -42,6 +42,7 @@ import javax.annotation.PreDestroy;
 public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaConsumingHealthIndicator.class);
+	private static final String CONSUMER_GROUP_PREFIX = "health-check-";
 
 	private final Consumer<String, String> consumer;
 
@@ -98,7 +99,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 			String groupId = (String) kafkaConsumerProperties.getOrDefault(ConsumerConfig.GROUP_ID_CONFIG,
 					UUID.randomUUID().toString());
 			kafkaConsumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG,
-					groupId + "-health-check-" + InetAddress.getLocalHost().getHostAddress());
+					CONSUMER_GROUP_PREFIX + groupId + "-" + InetAddress.getLocalHost().getHostAddress());
 		} catch (UnknownHostException e) {
 			throw new IllegalStateException(e);
 		}

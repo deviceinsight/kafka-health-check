@@ -3,7 +3,7 @@
 
 == Version 1.1.0
 
-* Always set the kafka consumer group of this health check
+* Make consumer groups unique by appending a random UUID when no group ID is configured explicitly.
 
 == Version 0.1.0
 
