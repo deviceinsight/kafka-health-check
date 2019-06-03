@@ -2,30 +2,22 @@ package com.deviceinsight.kafka.health;
 
 final class KafkaCommunicationResult {
 
-	private final String topic;
-
 	private final Exception exception;
 
-	private KafkaCommunicationResult(String topic) {
-		this.topic = topic;
+	private KafkaCommunicationResult() {
 		this.exception = null;
 	}
 
-	private KafkaCommunicationResult(String topic, Exception exception) {
-		this.topic = topic;
+	private KafkaCommunicationResult(Exception exception) {
 		this.exception = exception;
 	}
 
-	static KafkaCommunicationResult success(String topic) {
-		return new KafkaCommunicationResult(topic);
+	static KafkaCommunicationResult success() {
+		return new KafkaCommunicationResult();
 	}
 
-	static KafkaCommunicationResult failure(String topic, Exception exception) {
-		return new KafkaCommunicationResult(topic, exception);
-	}
-
-	String getTopic() {
-		return topic;
+	static KafkaCommunicationResult failure(Exception exception) {
+		return new KafkaCommunicationResult(exception);
 	}
 
 	Exception getException() {
@@ -34,7 +26,7 @@ final class KafkaCommunicationResult {
 
 	@Override
 	public String toString() {
-		return "KafkaCommunication{topic='" + topic + "', exception=" + exception + '}';
+		return "KafkaCommunication{exception=" + exception + '}';
 	}
 
 	public boolean isFailure() {
