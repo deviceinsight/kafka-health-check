@@ -7,7 +7,9 @@ import kafka.server.KafkaServer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
@@ -26,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-@EmbeddedKafka(topics = {TOPIC})
+@EmbeddedKafka(topics = TOPIC)
 public class KafkaConsumingHealthIndicatorTest {
 
 	static final String TOPIC = "health-checks";
