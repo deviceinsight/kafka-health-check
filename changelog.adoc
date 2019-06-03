@@ -1,6 +1,11 @@
 = KafkaHealthCheck
 :icons: font
 
-== Version 0.1.0
+== Version 1.1.0
+
+* Make consumer groups unique by appending a random UUID when no group ID is configured explicitly.
+* Refactor health check strategy: Kafka polled continuously.
+
+== Version 1.0.0
 
 * Develop kafka health check
