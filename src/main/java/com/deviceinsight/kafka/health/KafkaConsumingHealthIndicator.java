@@ -175,7 +175,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		String message = UUID.randomUUID().toString();
 
-		logger.debug("Send health check message = {}", message);
+		logger.trace("Send health check message = {}", message);
 
 		producer.send(new ProducerRecord<>(topic, message, message)).get(sendReceiveTimeoutMs, MILLISECONDS);
 

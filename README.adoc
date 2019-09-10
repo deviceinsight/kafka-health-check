@@ -16,7 +16,7 @@ Add the following dependency to your `pom.xml`
 <dependency>
     <groupId>com.deviceinsight.kafka</groupId>
     <artifactId>kafka-health-check</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ....
 
@@ -53,8 +53,8 @@ public KafkaHealthProperties kafkaHealthProperties() {
 @Bean
 public KafkaConsumingHealthIndicator kafkaConsumingHealthIndicator(KafkaHealthProperties kafkaProperties,
         KafkaProperties processingProperties) {
-    return new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
-            kafkaProperties.buildProducerProperties());
+    return new KafkaConsumingHealthIndicator(kafkaHealthProperties, processingProperties.buildConsumerProperties(),
+            processingProperties.buildProducerProperties());
 }
 ....
 
