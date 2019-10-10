@@ -205,7 +205,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 					goDown(builder);
 				} else {
 					builder.down(new TimeoutException(
-							"Sending and receiving took longer than " + sendReceiveTimeout + " ms"))
+							"Sending and receiving took longer than " + sendReceiveTimeout ))
 							.withDetail("topic", topic);
 				}
 
