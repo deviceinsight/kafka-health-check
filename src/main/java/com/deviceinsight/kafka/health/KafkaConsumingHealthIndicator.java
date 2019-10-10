@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -83,7 +82,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 		this.executor = Executors.newSingleThreadExecutor();
 		this.running = new AtomicBoolean(true);
 		this.cache =
-				Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeout.toMillis(), TimeUnit.MILLISECONDS).build();
+				Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeout).build();
 
 		this.kafkaCommunicationResult =
 				KafkaCommunicationResult.failure(new RejectedExecutionException("Kafka Health Check is starting."));
