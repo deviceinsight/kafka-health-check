@@ -1,11 +1,13 @@
 package com.deviceinsight.kafka.health;
 
+import java.time.Duration;
+
 public class KafkaHealthProperties {
 
 	private String topic = "health-checks";
-	private long sendReceiveTimeoutMs = 2500;
-	private long pollTimeoutMs = 200;
-	private long subscriptionTimeoutMs = 5000;
+	private Duration sendReceiveTimeout = Duration.ofMillis(2500);
+	private Duration pollTimeout = Duration.ofMillis(200);
+	private Duration subscriptionTimeout = Duration.ofSeconds(5);
 
 	public String getTopic() {
 		return topic;
@@ -15,27 +17,33 @@ public class KafkaHealthProperties {
 		this.topic = topic;
 	}
 
-	public long getSendReceiveTimeoutMs() {
-		return sendReceiveTimeoutMs;
+	public Duration getSendReceiveTimeout() {
+		return sendReceiveTimeout;
 	}
 
-	public void setSendReceiveTimeoutMs(long sendReceiveTimeoutMs) {
-		this.sendReceiveTimeoutMs = sendReceiveTimeoutMs;
+	public void setSendReceiveTimeout(Duration sendReceiveTimeout) {
+		this.sendReceiveTimeout = sendReceiveTimeout;
 	}
 
-	public long getPollTimeoutMs() {
-		return pollTimeoutMs;
+	public Duration getPollTimeout() {
+		return pollTimeout;
 	}
 
-	public void setPollTimeoutMs(long pollTimeoutMs) {
-		this.pollTimeoutMs = pollTimeoutMs;
+	public void setPollTimeout(Duration pollTimeout) {
+		this.pollTimeout = pollTimeout;
 	}
 
-	public long getSubscriptionTimeoutMs() {
-		return subscriptionTimeoutMs;
+	public Duration getSubscriptionTimeout() {
+		return subscriptionTimeout;
 	}
 
-	public void setSubscriptionTimeoutMs(long subscriptionTimeoutMs) {
-		this.subscriptionTimeoutMs = subscriptionTimeoutMs;
+	public void setSubscriptionTimeout(Duration subscriptionTimeout) {
+		this.subscriptionTimeout = subscriptionTimeout;
+	}
+
+	@Override
+	public String toString() {
+		return "KafkaHealthProperties{" + "topic='" + topic + '\'' + ", sendReceiveTimeout=" + sendReceiveTimeout +
+				", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + '}';
 	}
 }
