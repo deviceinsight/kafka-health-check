@@ -3,7 +3,8 @@
 
 == Version 2.0.0
 
-* Changed properties to duration type
+* Health check timeouts are configured in duration format.
+If you changed the defaults, please adapt your configuration.
 
 == Version 1.1.0
 
