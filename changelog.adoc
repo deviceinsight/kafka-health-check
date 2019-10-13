@@ -1,6 +1,11 @@
 = KafkaHealthCheck
 :icons: font
 
+== Version 2.0.0
+
+* Health check timeouts are configured in duration format.
+If you changed the defaults, please adapt your configuration.
+
 == Version 1.1.0
 
 * Make consumer groups unique by appending a random UUID when no group ID is configured explicitly.
