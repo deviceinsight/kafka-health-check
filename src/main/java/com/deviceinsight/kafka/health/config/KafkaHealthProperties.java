@@ -1,4 +1,4 @@
-package com.deviceinsight.kafka.health;
+package com.deviceinsight.kafka.health.config;
 
 public class KafkaHealthProperties {
 
