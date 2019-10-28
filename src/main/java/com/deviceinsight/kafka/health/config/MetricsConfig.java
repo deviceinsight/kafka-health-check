@@ -11,24 +11,24 @@ import io.micrometer.core.instrument.config.MeterFilter;
 @Configuration
 public class MetricsConfig {
 
-  @Value("${host}")
-  private String host;
+	@Value("${host}")
+	private String host;
 
-  @Value("${service}")
-  private String service;
+	@Value("${service}")
+	private String service;
 
-  @Value("${region}")
-  private String region;
+	@Value("${region}")
+	private String region;
 
-  @Bean
-  MeterRegistryCustomizer<MeterRegistry> meterRegistry() {
-    return registry -> registry.config().commonTags("host", host, "service", service, "region", region)
-        .meterFilter(MeterFilter.deny(id -> {
-          String uri = id.getTag("uri");
-          return uri != null && uri.startsWith("/actuator");
-        })).meterFilter(MeterFilter.deny(id -> {
-          String uri = id.getTag("uri");
-          return uri != null && uri.contains("favicon");
-        }));
-  }
+	@Bean
+	MeterRegistryCustomizer<MeterRegistry> meterRegistry() {
+		return registry -> registry.config().commonTags("host", host, "service", service, "region", region)
+				.meterFilter(MeterFilter.deny(id -> {
+					String uri = id.getTag("uri");
+					return uri != null && uri.startsWith("/actuator");
+				})).meterFilter(MeterFilter.deny(id -> {
+					String uri = id.getTag("uri");
+					return uri != null && uri.contains("favicon");
+				}));
+	}
 }

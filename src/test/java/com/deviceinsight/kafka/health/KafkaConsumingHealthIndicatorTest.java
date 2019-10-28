@@ -25,13 +25,13 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import kafka.server.KafkaServer;
 
@@ -42,12 +42,12 @@ public class KafkaConsumingHealthIndicatorTest {
 
 	static final String TOPIC = "health-checks";
 
-  private Consumer<String, String> consumer;
+	private Consumer<String, String> consumer;
 
-  @Autowired
-  private EmbeddedKafkaBroker embeddedKafkaBroker;
+	@Autowired
+	private EmbeddedKafkaBroker embeddedKafkaBroker;
 
-  private MeterRegistry meterRegistry;
+	private MeterRegistry meterRegistry;
 
 	@BeforeEach
 	public void setUp() {
@@ -57,7 +57,7 @@ public class KafkaConsumingHealthIndicatorTest {
 				new StringDeserializer()).createConsumer();
 		consumer.subscribe(Collections.singletonList(TOPIC));
 		consumer.poll(Duration.ofSeconds(1));
-    meterRegistry = new SimpleMeterRegistry();
+		meterRegistry = new SimpleMeterRegistry();
 	}
 
 	@AfterEach
@@ -78,7 +78,7 @@ public class KafkaConsumingHealthIndicatorTest {
 
 		final KafkaConsumingHealthIndicator healthIndicator =
 				new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
-            kafkaProperties.buildProducerProperties(), meterRegistry);
+						kafkaProperties.buildProducerProperties(), meterRegistry);
 		healthIndicator.subscribeAndSendMessage();
 
 		Health health = healthIndicator.health();
