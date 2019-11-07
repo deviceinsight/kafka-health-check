@@ -2,8 +2,10 @@ package com.deviceinsight.kafka.health;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import com.deviceinsight.kafka.health.config.KafkaHealthProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -18,6 +20,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 
@@ -40,10 +43,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaConsumingHealthIndicator.class);
 	private static final String CONSUMER_GROUP_PREFIX = "health-check-";
+	private static final String KAFKA_EXCEPTION = "kafka-exceptions";
 
 	private final Consumer<String, String> consumer;
 
@@ -60,15 +66,18 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private KafkaCommunicationResult kafkaCommunicationResult;
 
+	@Autowired
+	private MeterRegistry meterRegistry;
+
 	public KafkaConsumingHealthIndicator(KafkaHealthProperties kafkaHealthProperties,
-			Map<String, Object> kafkaConsumerProperties, Map<String, Object> kafkaProducerProperties) {
+			Map<String, Object> kafkaConsumerProperties, Map<String, Object> kafkaProducerProperties,
+			@Autowired MeterRegistry meterRegistry) {
 
 		logger.info("Initializing kafka health check with properties: {}", kafkaHealthProperties);
 		this.topic = kafkaHealthProperties.getTopic();
 		this.sendReceiveTimeout = kafkaHealthProperties.getSendReceiveTimeout();
 		this.pollTimeout = kafkaHealthProperties.getPollTimeout();
 		this.subscriptionTimeout = kafkaHealthProperties.getSubscriptionTimeout();
-
 		Map<String, Object> kafkaConsumerPropertiesCopy = new HashMap<>(kafkaConsumerProperties);
 
 		setConsumerGroup(kafkaConsumerPropertiesCopy);
@@ -81,11 +90,12 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		this.executor = Executors.newSingleThreadExecutor();
 		this.running = new AtomicBoolean(true);
-		this.cache =
-				Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeout).build();
+		this.cache = Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeout).build();
 
-		this.kafkaCommunicationResult =
-				KafkaCommunicationResult.failure(new RejectedExecutionException("Kafka Health Check is starting."));
+		this.kafkaCommunicationResult = KafkaCommunicationResult
+				.failure(new RejectedExecutionException("Kafka Health Check is starting."));
+
+		this.meterRegistry = meterRegistry;
 	}
 
 	@PostConstruct
@@ -93,8 +103,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 		subscribeToTopic();
 
 		if (kafkaCommunicationResult.isFailure()) {
-			throw new BeanInitializationException("Kafka health check failed",
-					kafkaCommunicationResult.getException());
+			throw new BeanInitializationException("Kafka health check failed", kafkaCommunicationResult.getException());
 		}
 
 		executor.submit(() -> {
@@ -187,7 +196,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 	protected void doHealthCheck(Health.Builder builder) {
 		String expectedMessage = sendMessage();
 		if (expectedMessage == null) {
-			goDown(builder);
+			goDown(builder, kafkaCommunicationResult.getException());
 			return;
 		}
 
@@ -201,19 +210,18 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 			} else if (System.currentTimeMillis() - startTime > sendReceiveTimeout.toMillis()) {
 
 				if (kafkaCommunicationResult.isFailure()) {
-					goDown(builder);
+					goDown(builder, kafkaCommunicationResult.getException());
 				} else {
-					builder.down(new TimeoutException(
-							"Sending and receiving took longer than " + sendReceiveTimeout ))
+					builder.down(new TimeoutException("Sending and receiving took longer than " + sendReceiveTimeout))
 							.withDetail("topic", topic);
 				}
-
 				return;
 			}
 		}
 	}
 
-	private void goDown(Health.Builder builder) {
-		builder.down(kafkaCommunicationResult.getException()).withDetail("topic", topic);
+	private void goDown(Health.Builder builder, Exception exception) {
+		builder.down(exception).withDetail("topic", topic);
+		meterRegistry.counter(KAFKA_EXCEPTION).increment();
 	}
 }

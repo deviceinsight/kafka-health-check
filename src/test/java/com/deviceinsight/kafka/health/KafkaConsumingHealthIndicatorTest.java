@@ -3,7 +3,9 @@ package com.deviceinsight.kafka.health;
 import static com.deviceinsight.kafka.health.KafkaConsumingHealthIndicatorTest.TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import kafka.server.KafkaServer;
+import com.deviceinsight.kafka.health.config.KafkaHealthProperties;
+import com.deviceinsight.kafka.health.config.MetricsConfig;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.awaitility.Awaitility;
@@ -20,6 +22,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
@@ -27,8 +30,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+import kafka.server.KafkaServer;
+
 @ExtendWith(SpringExtension.class)
 @EmbeddedKafka(topics = TOPIC)
+@ContextConfiguration(classes = {MetricsConfig.class})
 public class KafkaConsumingHealthIndicatorTest {
 
 	static final String TOPIC = "health-checks";
@@ -38,6 +47,8 @@ public class KafkaConsumingHealthIndicatorTest {
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafkaBroker;
 
+	private MeterRegistry meterRegistry;
+
 	@BeforeEach
 	public void setUp() {
 		Map<String, Object> consumerConfigs =
@@ -46,6 +57,7 @@ public class KafkaConsumingHealthIndicatorTest {
 				new StringDeserializer()).createConsumer();
 		consumer.subscribe(Collections.singletonList(TOPIC));
 		consumer.poll(Duration.ofSeconds(1));
+		meterRegistry = new SimpleMeterRegistry();
 	}
 
 	@AfterEach
@@ -66,7 +78,7 @@ public class KafkaConsumingHealthIndicatorTest {
 
 		final KafkaConsumingHealthIndicator healthIndicator =
 				new KafkaConsumingHealthIndicator(kafkaHealthProperties, kafkaProperties.buildConsumerProperties(),
-						kafkaProperties.buildProducerProperties());
+						kafkaProperties.buildProducerProperties(), meterRegistry);
 		healthIndicator.subscribeAndSendMessage();
 
 		Health health = healthIndicator.health();

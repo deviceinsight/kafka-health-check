@@ -1,4 +1,4 @@
-package com.deviceinsight.kafka.health;
+package com.deviceinsight.kafka.health.config;
 
 import java.time.Duration;
 
@@ -43,7 +43,7 @@ public class KafkaHealthProperties {
 
 	@Override
 	public String toString() {
-		return "KafkaHealthProperties{" + "topic='" + topic + '\'' + ", sendReceiveTimeout=" + sendReceiveTimeout +
-				", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + '}';
+		return "KafkaHealthProperties{" + "topic='" + topic + '\'' + ", sendReceiveTimeout=" + sendReceiveTimeout
+				+ ", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + '}';
 	}
 }
