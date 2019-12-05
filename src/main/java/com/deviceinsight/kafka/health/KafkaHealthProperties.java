@@ -25,12 +25,22 @@ public class KafkaHealthProperties {
 		this.sendReceiveTimeout = sendReceiveTimeout;
 	}
 
+	@Deprecated
+	public void setSendReceiveTimeoutMs(long sendReceiveTimeoutMs) {
+		setSendReceiveTimeout(Duration.ofMillis(sendReceiveTimeoutMs));
+	}
+
 	public Duration getPollTimeout() {
 		return pollTimeout;
 	}
 
 	public void setPollTimeout(Duration pollTimeout) {
 		this.pollTimeout = pollTimeout;
+	}
+
+	@Deprecated
+	public void setPollTimeoutMs(long pollTimeoutMs) {
+		setPollTimeout(Duration.ofMillis(pollTimeoutMs));
 	}
 
 	public Duration getSubscriptionTimeout() {
@@ -41,9 +51,14 @@ public class KafkaHealthProperties {
 		this.subscriptionTimeout = subscriptionTimeout;
 	}
 
+	@Deprecated
+	public void setSubscriptionTimeoutMs(long subscriptionTimeoutMs) {
+		setSubscriptionTimeout(Duration.ofMillis(subscriptionTimeoutMs));
+	}
+
 	@Override
 	public String toString() {
-		return "KafkaHealthProperties{" + "topic='" + topic + '\'' + ", sendReceiveTimeout=" + sendReceiveTimeout +
+		return "KafkaHealthProperties{topic='" + topic + "', sendReceiveTimeout=" + sendReceiveTimeout +
 				", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + '}';
 	}
 }
