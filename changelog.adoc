@@ -5,6 +5,8 @@
 
 * Health check timeouts can now be configured in `java.time.Duration` format. The timeouts can still be configured using
   millisecond values (`long`) as well to stay compatible with old configurations.
+* Dependency versions are now managed by `spring-boot-dependencies`.
+  (https://github.com/deviceinsight/kafka-health-check/issues/17[ISSUE-17])
 
 == Version 1.2.0
 
