@@ -11,6 +11,8 @@
   when instantiating the Kafka Health Check. (https://github.com/deviceinsight/kafka-health-check/issues/20[ISSUE-20])
 * The cache size can now be configured via the property `kafka.health.cache.maximum-size`.
   The default value for the cache size is 200. (https://github.com/deviceinsight/kafka-health-check/issues/22[ISSUE-22])
+* Filtering messages that do not come from the same instance.
+  (https://github.com/deviceinsight/kafka-health-check/issues/24[ISSUE-24])
 
 == Version 1.2.0
 

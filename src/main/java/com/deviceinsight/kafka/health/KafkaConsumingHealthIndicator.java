@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -114,7 +115,9 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 		executor.submit(() -> {
 			while (running.get()) {
 				ConsumerRecords<String, String> records = consumer.poll(pollTimeout);
-				records.forEach(record -> cache.put(record.key(), record.value()));
+				StreamSupport.stream(records.spliterator(), false)
+						.filter(record -> record.key() != null && record.key().equals(consumerGroupId))
+						.forEach(record -> cache.put(record.key(), record.value()));
 			}
 		});
 	}
@@ -191,7 +194,8 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		logger.trace("Send health check message = {}", message);
 
-		producer.send(new ProducerRecord<>(topic, message, message)).get(sendReceiveTimeout.toMillis(), MILLISECONDS);
+		producer.send(new ProducerRecord<>(topic, consumerGroupId, message))
+				.get(sendReceiveTimeout.toMillis(), MILLISECONDS);
 
 		return message;
 	}
@@ -206,7 +210,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		long startTime = System.currentTimeMillis();
 		while (true) {
-			String receivedMessage = cache.getIfPresent(expectedMessage);
+			String receivedMessage = cache.getIfPresent(consumerGroupId);
 			if (expectedMessage.equals(receivedMessage)) {
 
 				builder.up();
