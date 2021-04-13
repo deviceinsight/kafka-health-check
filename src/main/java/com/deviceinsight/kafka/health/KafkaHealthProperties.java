@@ -8,6 +8,7 @@ public class KafkaHealthProperties {
 	private Duration sendReceiveTimeout = Duration.ofMillis(2500);
 	private Duration pollTimeout = Duration.ofMillis(200);
 	private Duration subscriptionTimeout = Duration.ofSeconds(5);
+	private KafkaHealthCheckCacheProperties cache = new KafkaHealthCheckCacheProperties();
 
 	public String getTopic() {
 		return topic;
@@ -56,9 +57,18 @@ public class KafkaHealthProperties {
 		setSubscriptionTimeout(Duration.ofMillis(subscriptionTimeoutMs));
 	}
 
+	public KafkaHealthCheckCacheProperties getCache() {
+		return cache;
+	}
+
+	public void setCache(KafkaHealthCheckCacheProperties cache) {
+		this.cache = cache;
+	}
+
 	@Override
 	public String toString() {
-		return "KafkaHealthProperties{topic='" + topic + "', sendReceiveTimeout=" + sendReceiveTimeout +
-				", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + '}';
+		return "KafkaHealthProperties{" + "topic='" + topic + '\'' + ", sendReceiveTimeout=" + sendReceiveTimeout +
+				", pollTimeout=" + pollTimeout + ", subscriptionTimeout=" + subscriptionTimeout + ", cacheProperties=" +
+				cache + '}';
 	}
 }
