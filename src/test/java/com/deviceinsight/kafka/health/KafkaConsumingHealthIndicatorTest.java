@@ -3,6 +3,7 @@ package com.deviceinsight.kafka.health;
 import static com.deviceinsight.kafka.health.KafkaConsumingHealthIndicatorTest.TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import kafka.server.KafkaServer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
