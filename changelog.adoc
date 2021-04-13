@@ -7,6 +7,8 @@
   millisecond values (`long`) as well to stay compatible with old configurations.
 * Dependency versions are now managed by `spring-boot-dependencies`.
   (https://github.com/deviceinsight/kafka-health-check/issues/17[ISSUE-17])
+* As of now, cache metrics can be exposed. For this purpose, a corresponding MeterRegistry instance must be passed
+  when instantiating the Kafka Health Check. (https://github.com/deviceinsight/kafka-health-check/issues/20[ISSUE-20])
 
 == Version 1.2.0
 
