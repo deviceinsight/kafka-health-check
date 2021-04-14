@@ -14,6 +14,6 @@ public class KafkaHealthCheckCacheProperties {
 
 	@Override
 	public String toString() {
-		return "CacheProperties{" + "maximumSize=" + maximumSize + '}';
+		return "CacheProperties{maximumSize=" + maximumSize + '}';
 	}
 }
