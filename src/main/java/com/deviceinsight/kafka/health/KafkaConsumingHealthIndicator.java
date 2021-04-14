@@ -92,7 +92,10 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		this.executor = Executors.newSingleThreadExecutor();
 		this.running = new AtomicBoolean(true);
-		this.cache = Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeout).build();
+		this.cache = Caffeine.newBuilder()
+				.expireAfterWrite(sendReceiveTimeout)
+				.maximumSize(kafkaHealthProperties.getCache().getMaximumSize())
+				.build();
 
 		enableCacheMetrics(cache, meterRegistry);
 
