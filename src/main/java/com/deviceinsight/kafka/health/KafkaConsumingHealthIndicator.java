@@ -116,7 +116,7 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 			while (running.get()) {
 				ConsumerRecords<String, String> records = consumer.poll(pollTimeout);
 				StreamSupport.stream(records.spliterator(), false)
-						.filter(record -> record.key() != null && record.key().equals(consumerGroupId))
+						.filter(record -> record.key() != null && record.key().contains(consumerGroupId))
 						.forEach(record -> cache.put(record.key(), record.value()));
 			}
 		});
@@ -191,10 +191,11 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 	private String sendKafkaMessage() throws InterruptedException, ExecutionException, TimeoutException {
 
 		String message = UUID.randomUUID().toString();
+		String key = createKeyFromMessageAndConsumerGroupId(message);
 
 		logger.trace("Send health check message = {}", message);
 
-		producer.send(new ProducerRecord<>(topic, consumerGroupId, message))
+		producer.send(new ProducerRecord<>(topic, key, message))
 				.get(sendReceiveTimeout.toMillis(), MILLISECONDS);
 
 		return message;
@@ -210,7 +211,8 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		long startTime = System.currentTimeMillis();
 		while (true) {
-			String receivedMessage = cache.getIfPresent(consumerGroupId);
+			String key = createKeyFromMessageAndConsumerGroupId(expectedMessage);
+			String receivedMessage = cache.getIfPresent(key);
 			if (expectedMessage.equals(receivedMessage)) {
 
 				builder.up();
@@ -240,5 +242,9 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		CaffeineCacheMetrics.monitor(meterRegistry, cache, CACHE_NAME,
 				Collections.singletonList(Tag.of("instance", consumerGroupId)));
+	}
+
+	private String createKeyFromMessageAndConsumerGroupId(String message) {
+		return message + "-" + consumerGroupId;
 	}
 }
