@@ -16,7 +16,7 @@ Add the following dependency to your `pom.xml`
 <dependency>
     <groupId>com.deviceinsight.kafka</groupId>
     <artifactId>kafka-health-check</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ....
 
@@ -30,9 +30,9 @@ An example for an `application.yaml` is:
 kafka:
   health:
     topic: health-checks
-    sendReceiveTimeoutMs: 2500
-    pollTimeoutMs: 200
-    subscriptionTimeoutMs: 5000
+    sendReceiveTimeout: 2.5s
+    pollTimeout: 200ms
+    subscriptionTimeout: 5s
 ....
 
 The values shown are the defaults.
@@ -78,9 +78,10 @@ Now if you call the actuator endpoint `actuator/health` you should see the follo
 |Property |Default |Description
 
 |kafka.health.topic |`health-checks` | Topic to subscribe to
-|kafka.health.sendReceiveTimeoutMs |2500 | The maximum time, in milliseconds, to wait for sending and receiving the message
-|kafka.health.pollTimeoutMs |200 | The time, in milliseconds, spent fetching the data from the topic
-|kafka.health.subscriptionTimeoutMs |5000 | The maximum time, in milliseconds, to wait for subscribing to topic
+|kafka.health.sendReceiveTimeout |2.5s | The maximum time, given as https://docs.spring.io/spring-boot/docs/2.1.9.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-conversion-duration[Duration], to wait for sending and receiving the message.
+|kafka.health.pollTimeout |200ms | The time, given as https://docs.spring.io/spring-boot/docs/2.1.9.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-conversion-duration[Duration], spent fetching the data from the topic
+|kafka.health.subscriptionTimeout |5s | The maximum time, given as https://docs.spring.io/spring-boot/docs/2.1.9.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-conversion-duration[Duration], to wait for subscribing to topic
+|kafka.health.cache.maximumSize |200 | Specifies the maximum number of entries the cache may contain.
 
 |===
 

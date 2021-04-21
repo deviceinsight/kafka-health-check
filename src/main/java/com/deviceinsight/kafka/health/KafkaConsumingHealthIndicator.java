@@ -4,6 +4,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -34,9 +37,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -45,33 +48,42 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaConsumingHealthIndicator.class);
 	private static final String CONSUMER_GROUP_PREFIX = "health-check-";
+	private static final String CACHE_NAME = "kafka-health-check";
 
 	private final Consumer<String, String> consumer;
-
 	private final Producer<String, String> producer;
 
 	private final String topic;
-	private final long sendReceiveTimeoutMs;
-	private final long pollTimeoutMs;
-	private final long subscriptionTimeoutMs;
+	private final Duration sendReceiveTimeout;
+	private final Duration pollTimeout;
+	private final Duration subscriptionTimeout;
 
 	private final ExecutorService executor;
 	private final AtomicBoolean running;
 	private final Cache<String, String> cache;
+	private final String consumerGroupId;
 
 	private KafkaCommunicationResult kafkaCommunicationResult;
 
 	public KafkaConsumingHealthIndicator(KafkaHealthProperties kafkaHealthProperties,
 			Map<String, Object> kafkaConsumerProperties, Map<String, Object> kafkaProducerProperties) {
+		this(kafkaHealthProperties, kafkaConsumerProperties, kafkaProducerProperties, null);
+	}
 
+	public KafkaConsumingHealthIndicator(KafkaHealthProperties kafkaHealthProperties,
+			Map<String, Object> kafkaConsumerProperties, Map<String, Object> kafkaProducerProperties,
+			MeterRegistry meterRegistry) {
+
+		logger.info("Initializing kafka health check with properties: {}", kafkaHealthProperties);
 		this.topic = kafkaHealthProperties.getTopic();
-		this.sendReceiveTimeoutMs = kafkaHealthProperties.getSendReceiveTimeoutMs();
-		this.pollTimeoutMs = kafkaHealthProperties.getPollTimeoutMs();
-		this.subscriptionTimeoutMs = kafkaHealthProperties.getSubscriptionTimeoutMs();
+		this.sendReceiveTimeout = kafkaHealthProperties.getSendReceiveTimeout();
+		this.pollTimeout = kafkaHealthProperties.getPollTimeout();
+		this.subscriptionTimeout = kafkaHealthProperties.getSubscriptionTimeout();
 
 		Map<String, Object> kafkaConsumerPropertiesCopy = new HashMap<>(kafkaConsumerProperties);
 
-		setConsumerGroup(kafkaConsumerPropertiesCopy);
+		this.consumerGroupId = getUniqueConsumerGroupId(kafkaConsumerPropertiesCopy);
+		kafkaConsumerPropertiesCopy.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
 
 		StringDeserializer deserializer = new StringDeserializer();
 		StringSerializer serializer = new StringSerializer();
@@ -81,7 +93,12 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		this.executor = Executors.newSingleThreadExecutor();
 		this.running = new AtomicBoolean(true);
-		this.cache = Caffeine.newBuilder().expireAfterWrite(sendReceiveTimeoutMs, TimeUnit.MILLISECONDS).build();
+		this.cache = Caffeine.newBuilder()
+				.expireAfterWrite(sendReceiveTimeout)
+				.maximumSize(kafkaHealthProperties.getCache().getMaximumSize())
+				.build();
+
+		enableCacheMetrics(cache, meterRegistry);
 
 		this.kafkaCommunicationResult =
 				KafkaCommunicationResult.failure(new RejectedExecutionException("Kafka Health Check is starting."));
@@ -97,8 +114,10 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		executor.submit(() -> {
 			while (running.get()) {
-				ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(pollTimeoutMs));
-				records.forEach(record -> cache.put(record.key(), record.value()));
+				ConsumerRecords<String, String> records = consumer.poll(pollTimeout);
+				StreamSupport.stream(records.spliterator(), false)
+						.filter(record -> record.key() != null && record.key().contains(consumerGroupId))
+						.forEach(record -> cache.put(record.key(), record.value()));
 			}
 		});
 	}
@@ -111,12 +130,11 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 		consumer.close();
 	}
 
-	private void setConsumerGroup(Map<String, Object> kafkaConsumerProperties) {
+	private String getUniqueConsumerGroupId(Map<String, Object> kafkaConsumerProperties) {
 		try {
 			String groupId = (String) kafkaConsumerProperties.getOrDefault(ConsumerConfig.GROUP_ID_CONFIG,
 					UUID.randomUUID().toString());
-			kafkaConsumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG,
-					CONSUMER_GROUP_PREFIX + groupId + "-" + InetAddress.getLocalHost().getHostAddress());
+			return CONSUMER_GROUP_PREFIX + groupId + "-" + InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e) {
 			throw new IllegalStateException(e);
 		}
@@ -145,8 +163,8 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 			}
 		});
 
-		consumer.poll(Duration.ofMillis(pollTimeoutMs));
-		if (!subscribed.await(subscriptionTimeoutMs, MILLISECONDS)) {
+		consumer.poll(pollTimeout);
+		if (!subscribed.await(subscriptionTimeout.toMillis(), MILLISECONDS)) {
 			throw new BeanInitializationException("Subscription to kafka failed, topic=" + topic);
 		}
 
@@ -157,7 +175,6 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		try {
 			return sendKafkaMessage();
-
 		} catch (ExecutionException e) {
 			logger.warn("Kafka health check execution failed.", e);
 			this.kafkaCommunicationResult = KafkaCommunicationResult.failure(e);
@@ -174,10 +191,12 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 	private String sendKafkaMessage() throws InterruptedException, ExecutionException, TimeoutException {
 
 		String message = UUID.randomUUID().toString();
+		String key = createKeyFromMessageAndConsumerGroupId(message);
 
 		logger.trace("Send health check message = {}", message);
 
-		producer.send(new ProducerRecord<>(topic, message, message)).get(sendReceiveTimeoutMs, MILLISECONDS);
+		producer.send(new ProducerRecord<>(topic, key, message))
+				.get(sendReceiveTimeout.toMillis(), MILLISECONDS);
 
 		return message;
 	}
@@ -192,30 +211,40 @@ public class KafkaConsumingHealthIndicator extends AbstractHealthIndicator {
 
 		long startTime = System.currentTimeMillis();
 		while (true) {
-			String receivedMessage = cache.getIfPresent(expectedMessage);
+			String key = createKeyFromMessageAndConsumerGroupId(expectedMessage);
+			String receivedMessage = cache.getIfPresent(key);
 			if (expectedMessage.equals(receivedMessage)) {
 
 				builder.up();
 				return;
-
-			} else if (System.currentTimeMillis() - startTime > sendReceiveTimeoutMs) {
+			} else if (System.currentTimeMillis() - startTime > sendReceiveTimeout.toMillis()) {
 
 				if (kafkaCommunicationResult.isFailure()) {
 					goDown(builder);
 				} else {
-					builder.down(new TimeoutException(
-							"Sending and receiving took longer than " + sendReceiveTimeoutMs + " ms"))
+					builder.down(new TimeoutException("Sending and receiving took longer than " + sendReceiveTimeout))
 							.withDetail("topic", topic);
 				}
 
 				return;
 			}
 		}
-
 	}
 
 	private void goDown(Health.Builder builder) {
 		builder.down(kafkaCommunicationResult.getException()).withDetail("topic", topic);
 	}
 
+	private void enableCacheMetrics(Cache<String, String> cache, MeterRegistry meterRegistry) {
+		if (meterRegistry == null) {
+			return;
+		}
+
+		CaffeineCacheMetrics.monitor(meterRegistry, cache, CACHE_NAME,
+				Collections.singletonList(Tag.of("instance", consumerGroupId)));
+	}
+
+	private String createKeyFromMessageAndConsumerGroupId(String message) {
+		return message + "-" + consumerGroupId;
+	}
 }
